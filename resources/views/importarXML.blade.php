@@ -22,9 +22,23 @@
         </form>
     </div>
     <div class="card mt-4 p-2">
-        <span id="emitente-info"></span>
-        <span id="nf-info"></span>
-        <span id="total-info"></span>
+        <div class="row text-center">
+            <div class="col-4">
+                <span id="emitente-info"></span>
+            </div>
+            <div class="col">
+                <span id="emitente-info"></span>
+            </div>
+            <div class="col-2">
+                <span id="nf-info"></span>
+            </div>
+            <div class="col">
+                <span id="total-info"></span>
+            </div>
+            <div class="col">
+                <span id="total_geral_icms-info"></span>
+            </div>
+        </div>
         <table class="table table-dark table-sm" id="dataTable">
             <thead>
             <tr>
@@ -35,6 +49,10 @@
                 <th scope="col">Quantidade</th>
                 <th scope="col">Preço</th>
                 <th scope="col">Total</th>
+                <th scope="col">Total ICMS</th>
+                <th scope="col">Preço final</th>
+                <th scope="col">Preço Desconto </th>
+
             </tr>
             </thead>
             <tbody>
@@ -78,16 +96,26 @@
                     } else {
                         alert('Dados do emitente não encontrados.');
                     }
+                    if (response.total_geral_icms) {
+                        // Exemplo de como preencher um campo com os dados do emitente
+                        $('#total_geral_icms-info').html('Total ICMS: ' + response.total_geral_icms);  // Exemplo de exibição do nome do emitente
+                    } else {
+                        alert('Dados do emitente não encontrados.');
+                    }
 
                     // Verifica se os dados de produtos existem
                     if (response.produtos && response.produtos.length > 0) {
                         $('#dataTable tbody').empty();  // Limpa a tabela antes de preencher
 
                         // Preenche a tabela com os dados dos produtos
-                        response.produtos.forEach(function(item) {
-                            var valorUnitarioFormatado = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.valor_unitario);
-                            var valorTotalFormatado = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.valor_total);
+                        response.produtos.forEach(function (item) {
+                            console.log(item.preco_final);
+                            var valorUnitarioFormatado = new Intl.NumberFormat('pt-BR', {
+                                style: 'currency',
+                                currency: 'BRL'
+                            }).format(item.valor_unitario);
                             var quantidadeFormatada = new Intl.NumberFormat('pt-BR').format(item.quantidade);
+
                             var row = '<tr>' +
                                 '<td>' + item.codigo + '</td>' +
                                 '<td>' + item.descricao + '</td>' +
@@ -95,17 +123,32 @@
                                 '<td>' + item.ncm + '</td>' +
                                 '<td>' + quantidadeFormatada + '</td>' +
                                 '<td>' + valorUnitarioFormatado + '</td>' +
-                                '<td>' + valorTotalFormatado + '</td>' +
+                                '<td>' + item.valor_total + '</td>' +
+                                '<td>' + item.total_ICMS + '</td>' +
+                                '<td>' + item.preco_final + '</td>' +
+                                '<td>' + item.preco_finalDesconto + '</td>' +
+
                                 '</tr>';
                             $('#dataTable tbody').append(row);  // Adiciona apenas uma vez
                         });
                     } else {
-                        alert('Nenhum dado de produtos retornado.');
+                        alert('Nenhum dado de produto retornado.');
                     }
-
                 },
                 error: function (xhr, status, error) {
-                    alert('Erro ao enviar o arquivo: ' + error);  // Exibe um alerta de erro
+                    console.error("Erro na requisição AJAX:", xhr); // Mostra o erro completo no console
+                    let errorMessage = "Erro ao enviar o arquivo: " + error;
+
+                    if (xhr.responseJSON) {
+                        errorMessage += "\nMensagem do servidor: " + (xhr.responseJSON.message || "Erro desconhecido");
+                        if (xhr.responseJSON.errors) {
+                            errorMessage += "\nDetalhes: " + JSON.stringify(xhr.responseJSON.errors, null, 2);
+                        }
+                    } else {
+                        errorMessage += "\nResposta do servidor: " + xhr.responseText;
+                    }
+
+                    alert(errorMessage);  // Exibe um alerta com os detalhes do erro
                 }
             });
         });
