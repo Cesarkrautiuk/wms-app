@@ -112,13 +112,7 @@ class notaFiscal extends Controller
 
     public function importarXML(Request $request)
     {
-        // Validação do arquivo
-        $request->validate([
-            'xml_file' => 'required|file|mimes:xml|max:2048',
-        ]);
-
-        // Processa o XML usando o Service
-        $dados = $this->produtoService->importarXML($request->file('xml_file'));
+        $dados = $this->produtoService->importarXML($request);
 
         return response()->json($dados);
     }

@@ -14,6 +14,26 @@
         <h3 class="text-center">Enviar Arquivo XML</h3>
         <form id="uploadForm" enctype="multipart/form-data">
             @csrf
+            <div class="row ">
+                <div class="col">
+                    <div class="input-group mb-3">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"
+                                  id="inputGroup-sizing-default">Desconto</span>
+                            <input type="text" name="desconto" class="form-control" aria-label="Sizing example input"
+                                   aria-describedby="inputGroup-sizing-default">
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text"
+                              id="inputGroup-sizing-default">Bonificação</span>
+                        <input type="text" class="form-control" name="bonificação" aria-label="Sizing example input"
+                               aria-describedby="inputGroup-sizing-default">
+                    </div>
+                </div>
+            </div>
             <div class="input-group mb-3">
                 <input type="file" class="form-control bg-dark" accept=".xml" required name="xml_file"
                        id="inputGroupFile02">
@@ -22,24 +42,29 @@
         </form>
     </div>
     <div class="card mt-4 p-2">
-        <div class="row text-center">
-            <div class="col-4">
-                <span id="emitente-info"></span>
-            </div>
+        <div class="row">
             <div class="col">
                 <span id="emitente-info"></span>
             </div>
-            <div class="col-2">
+            <div class="col">
                 <span id="nf-info"></span>
             </div>
             <div class="col">
                 <span id="total-info"></span>
             </div>
+        </div>
+        <div class="row mt-2 mb-2 ">
             <div class="col">
                 <span id="total_geral_icms-info"></span>
             </div>
+            <div class="col">
+                <span id="total_bonificação-info"></span>
+            </div>
+            <div class="col">
+                <span id="total_desconto-info"></span>
+            </div>
         </div>
-        <table class="table table-dark table-sm" id="dataTable">
+        <table class="table table-dark table-sm text-center" id="dataTable">
             <thead>
             <tr>
                 <th scope="col">Codigo</th>
@@ -51,7 +76,7 @@
                 <th scope="col">Total</th>
                 <th scope="col">Total ICMS</th>
                 <th scope="col">Preço final</th>
-                <th scope="col">Preço Desconto </th>
+                <th scope="col">Preço com desconto </th>
 
             </tr>
             </thead>
@@ -102,6 +127,18 @@
                     } else {
                         alert('Dados do emitente não encontrados.');
                     }
+                    if (response.total_bonificacao) {
+                        // Exemplo de como preencher um campo com os dados do emitente
+                        $('#total_bonificação-info').html('Total Bonificação: ' + response.total_bonificacao);  // Exemplo de exibição do nome do emitente
+                    } else {
+                        alert('Dados do emitente não encontrados.');
+                    }
+                    if (response.total_desconto) {
+                        // Exemplo de como preencher um campo com os dados do emitente
+                        $('#total_desconto-info').html('Total Desconto: ' + response.total_desconto);  // Exemplo de exibição do nome do emitente
+                    } else {
+                        alert('Dados do emitente não encontrados.');
+                    }
 
                     // Verifica se os dados de produtos existem
                     if (response.produtos && response.produtos.length > 0) {
@@ -109,7 +146,7 @@
 
                         // Preenche a tabela com os dados dos produtos
                         response.produtos.forEach(function (item) {
-                            console.log(item.preco_final);
+
                             var valorUnitarioFormatado = new Intl.NumberFormat('pt-BR', {
                                 style: 'currency',
                                 currency: 'BRL'
