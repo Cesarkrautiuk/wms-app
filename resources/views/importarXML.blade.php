@@ -1,20 +1,12 @@
-<!DOCTYPE html>
-<html lang="pt-BR" data-bs-theme="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload XML</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-</head>
-<body>
+@extends('layouts.app')
 
-<div class="container mt-5">
-    <div class="card p-4">
-        <h3 class="text-center">Enviar Arquivo XML</h3>
+@section('content')
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title mb-3 m-1">Importar XML</h5>
         <form id="uploadForm" enctype="multipart/form-data">
             @csrf
-            <div class="row ">
+            <div class="row mt-3 ">
                 <div class="col">
                     <div class="input-group mb-3">
                         <div class="input-group mb-3">
@@ -40,10 +32,16 @@
                 <button class="btn btn-outline-secondary" type="submit" id="inputGroupFileAddon04">Enviar</button>
             </div>
         </form>
+        <div>
+            <button type="button" class="btn btn-danger mt-3" id="clearButton">Limpar</button>
+        </div>
+        </div>
     </div>
-    <div class="card mt-4 p-2">
+    <div class="card mt-3 p-2 d-none" id="dadosNotaCard">
+        <div class="card-body">
+            <h5 class="card-title">Dados da nota</h5>
         <div class="row">
-            <div class="col">
+            <div class="col-6">
                 <span id="emitente-info"></span>
             </div>
             <div class="col">
@@ -52,128 +50,104 @@
             <div class="col">
                 <span id="total-info"></span>
             </div>
-        </div>
-        <div class="row mt-2 mb-2 ">
             <div class="col">
                 <span id="total_geral_icms-info"></span>
             </div>
-            <div class="col">
+        </div>
+        <div class="row mt-3 mb-2 ">
+            <div class="col-6">
                 <span id="total_bonificação-info"></span>
             </div>
-            <div class="col">
+            <div class="col-2">
                 <span id="total_desconto-info"></span>
             </div>
+            <div class="col-4">
+                <span id="duplicatas"></span>
+            </div>
         </div>
-        <table class="table table-dark table-sm text-center" id="dataTable">
+        </div>
+    </div>
+    <div class="card mt-2 p-2 d-none" id="dadosTabelaCard">
+        <table class="table table-dark table-sm text-center mt-4" id="dataTable">
             <thead>
             <tr>
                 <th scope="col">Codigo</th>
                 <th scope="col">Descrição</th>
                 <th scope="col">Codigo barras</th>
                 <th scope="col">Ncm</th>
-                <th scope="col">Quantidade</th>
+                <th scope="col">QTA</th>
                 <th scope="col">Preço</th>
                 <th scope="col">Total</th>
                 <th scope="col">Total ICMS</th>
                 <th scope="col">Preço final</th>
-                <th scope="col">Preço com desconto </th>
-
+                <th scope="col">Preço c/ desc.</th>
             </tr>
             </thead>
             <tbody>
-            <!-- Dados preenchidos por AJAX -->
             </tbody>
         </table>
     </div>
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     $(document).ready(function () {
         $('#uploadForm').on('submit', function (e) {
-            e.preventDefault();  // Impede o envio tradicional do formulário
+            e.preventDefault();
 
-            var formData = new FormData(this);  // Cria o objeto FormData
+            var formData = new FormData(this);
 
             $.ajax({
-                url: '{{ route('importarXML') }}',  // Rota para onde o arquivo será enviado
+                url: '{{ route('importarXML') }}',
                 type: 'POST',
                 data: formData,
-                processData: false,  // Evita que o jQuery processe os dados
-                contentType: false,  // Impede que o jQuery defina o tipo de conteúdo
+                processData: false,
+                contentType: false,
+
                 success: function (response) {
-                    // Verifique e exiba os dados do emitente (se necessário)
-                    if (response.emitente) {
-                        // Exemplo de como preencher um campo com os dados do emitente
-                        $('#emitente-info').html('Emitente: ' + response.emitente);  // Exemplo de exibição do nome do emitente
-                    } else {
-                        alert('Dados do emitente não encontrados.');
-                    }
-                    if (response.numero_nota) {
-                        // Exemplo de como preencher um campo com os dados do emitente
-                        $('#nf-info').html('NF:: ' + response.numero_nota);  // Exemplo de exibição do nome do emitente
-                    } else {
-                        alert('Dados do emitente não encontrados.');
-                    }
-                    if (response.total_nf) {
-                        // Exemplo de como preencher um campo com os dados do emitente
-                        $('#total-info').html('Total NF: ' + response.total_nf);  // Exemplo de exibição do nome do emitente
-                    } else {
-                        alert('Dados do emitente não encontrados.');
-                    }
-                    if (response.total_geral_icms) {
-                        // Exemplo de como preencher um campo com os dados do emitente
-                        $('#total_geral_icms-info').html('Total ICMS: ' + response.total_geral_icms);  // Exemplo de exibição do nome do emitente
-                    } else {
-                        alert('Dados do emitente não encontrados.');
-                    }
-                    if (response.total_bonificacao) {
-                        // Exemplo de como preencher um campo com os dados do emitente
-                        $('#total_bonificação-info').html('Total Bonificação: ' + response.total_bonificacao);  // Exemplo de exibição do nome do emitente
-                    } else {
-                        alert('Dados do emitente não encontrados.');
-                    }
-                    if (response.total_desconto) {
-                        // Exemplo de como preencher um campo com os dados do emitente
-                        $('#total_desconto-info').html('Total Desconto: ' + response.total_desconto);  // Exemplo de exibição do nome do emitente
-                    } else {
-                        alert('Dados do emitente não encontrados.');
+                    // Limpa os elementos para os novos dados
+                    $('#emitente-info').html('Fornecedor: ' + response.emitente);
+                    $('#nf-info').html('NF: ' + response.numero_nota);
+                    $('#total-info').html('Total: ' + response.total_nf);
+                    $('#total_geral_icms-info').html('Imposto: ' + response.total_geral_icms);
+                    $('#total_bonificação-info').html('Bonificação: ' + response.total_bonificacao);
+                    $('#total_desconto-info').html('Desconto: ' + response.total_desconto);
+
+                    if (response.duplicatas && response.duplicatas.length > 0) {
+                        var prazos = response.duplicatas.map(function (duplicata) {
+                            return duplicata.dias_ate_vencimento;
+                        });
+                        var prazoFormatado = prazos.join('/');
+                        $('#duplicatas').append('<span>Prazo: ' + prazoFormatado + '</span>');
                     }
 
-                    // Verifica se os dados de produtos existem
+                    // Mostra as seções apenas se houver dados
+                    if (response.emitente && response.numero_nota) {
+                        $('#dadosNotaCard').removeClass('d-none');
+                    }
+
                     if (response.produtos && response.produtos.length > 0) {
-                        $('#dataTable tbody').empty();  // Limpa a tabela antes de preencher
-
-                        // Preenche a tabela com os dados dos produtos
+                        $('#dadosTabelaCard').removeClass('d-none');
+                        $('#dataTable tbody').empty();
                         response.produtos.forEach(function (item) {
-
-                            var valorUnitarioFormatado = new Intl.NumberFormat('pt-BR', {
-                                style: 'currency',
-                                currency: 'BRL'
-                            }).format(item.valor_unitario);
-                            var quantidadeFormatada = new Intl.NumberFormat('pt-BR').format(item.quantidade);
-
                             var row = '<tr>' +
                                 '<td>' + item.codigo + '</td>' +
                                 '<td>' + item.descricao + '</td>' +
                                 '<td>' + item.codigo_barras + '</td>' +
                                 '<td>' + item.ncm + '</td>' +
-                                '<td>' + quantidadeFormatada + '</td>' +
-                                '<td>' + valorUnitarioFormatado + '</td>' +
+                                '<td>' + item.quantidade + '</td>' +
+                                '<td>' + item.valor_unitario + '</td>' +
                                 '<td>' + item.valor_total + '</td>' +
                                 '<td>' + item.total_ICMS + '</td>' +
                                 '<td>' + item.preco_final + '</td>' +
                                 '<td>' + item.preco_finalDesconto + '</td>' +
-
                                 '</tr>';
-                            $('#dataTable tbody').append(row);  // Adiciona apenas uma vez
+                            $('#dataTable tbody').append(row);
                         });
                     } else {
                         alert('Nenhum dado de produto retornado.');
                     }
                 },
                 error: function (xhr, status, error) {
-                    console.error("Erro na requisição AJAX:", xhr); // Mostra o erro completo no console
+                    console.error("Erro na requisição AJAX:", xhr);
                     let errorMessage = "Erro ao enviar o arquivo: " + error;
 
                     if (xhr.responseJSON) {
@@ -185,12 +159,24 @@
                         errorMessage += "\nResposta do servidor: " + xhr.responseText;
                     }
 
-                    alert(errorMessage);  // Exibe um alerta com os detalhes do erro
+                    alert(errorMessage);
                 }
             });
         });
+
+        $('#clearButton').on('click', function () {
+            $('#uploadForm')[0].reset();
+            $('#emitente-info').html('');
+            $('#nf-info').html('');
+            $('#total-info').html('');
+            $('#total_geral_icms-info').html('');
+            $('#total_bonificação-info').html('');
+            $('#total_desconto-info').html('');
+            $('#duplicatas').html('');
+            $('#dataTable tbody').empty();
+            $('#dadosNotaCard').addClass('d-none');
+            $('#dadosTabelaCard').addClass('d-none');
+        });
     });
 </script>
-
-</body>
-</html>
+@endsection
