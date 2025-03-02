@@ -27,7 +27,7 @@ class ProdutoService
 
         $xml = new SimpleXMLElement($xmlContent);
 
-        $dataEmissao = (string)$xml->NFe->infNFe->ide->dEmi;
+        $dataEmissao = (string)$xml->NFe->infNFe->ide->dhEmi;
         $chaveAcesso = (string)$xml->NFe->infNFe['Id'] ?? 'Sem chave';
         $numeroNota = (string)$xml->NFe->infNFe->ide->nNF;
         $totalNF = (float)$xml->NFe->infNFe->total->ICMSTot->vNF;
@@ -35,15 +35,21 @@ class ProdutoService
         $valorDesconto = $totalNF * $DescontoPorcentagem;
         $emitente = (string)$xml->NFe->infNFe->emit->xNome ?? 'Sem emitente';
         $this->totalICMSGeral = 0;
-        $dataEmissaoCarbon = Carbon::parse($dataEmissao);
-        $dataEmissaoSomente = $dataEmissaoCarbon->format('Y-m-d');
-        $dataEmissaoCarbon = Carbon::createFromFormat('Y-m-d', $dataEmissaoSomente);
+        $dataEmissaoCarbon = Carbon::parse($dataEmissao)->toDateString();
+        $dataEmissaoCarbon = Carbon::createFromFormat('Y-m-d', $dataEmissaoCarbon);
         $duplicatasInfo = [];
 
         foreach ($xml->NFe->infNFe->cobr->dup as $duplicata) {
+
             $dataVencimento = (string)$duplicata->dVenc;
-            $dataVencimentoCarbon = Carbon::createFromFormat('Y-m-d', $dataVencimento);
-            $diasAteVencimento = $dataEmissaoCarbon->diffInDays($dataVencimentoCarbon);
+
+            if (strpos($dataVencimento, '/') !== false) {
+                $dataVencimentoCarbon = Carbon::createFromFormat('d/m/Y', $dataVencimento);
+            } else {
+                $dataVencimentoCarbon = Carbon::createFromFormat('Y-m-d', $dataVencimento);
+            }
+
+            $diasAteVencimento = $dataEmissaoCarbon->diffInDays($dataVencimentoCarbon, false);
 
             $duplicatasInfo[] = [
                 'numero_duplicata' => (string)$duplicata->nDup,
@@ -78,7 +84,7 @@ class ProdutoService
 
         foreach ($itens as $item) {
 
-            $produtos[] = $this->processarProduto($item->prod ?? [], $desconto);
+            $produtos[] = $this->processarProduto($item ?? [], $desconto);
         }
 
         return $produtos;
@@ -86,54 +92,68 @@ class ProdutoService
 
     private function processarProduto($produto, $desconto)
     {
-        $DescontoPorcentagem = $desconto > 0 ? ($desconto / 100) : 0;
+        bcscale(8); // Define a precisão para 8 casas decimais
 
-        if ((string)$produto->cEAN == 'SEM GTIN') {
-            $produtoModel = Produto::where('codigo_fornecedor', (string)$produto->cProd)->with('tributacao')->first();
+        $DescontoPorcentagem = bcdiv($desconto, '100', 8);
+        $IPI = '0';
+
+        if ((string)$produto->cEAN === 'SEM GTIN') {
+            $produtoModel = Produto::where('codigo_fornecedor', (string)$produto->prod->cProd)
+                ->with('tributacao')->first();
         } else {
-            $produtoModel = Produto::where('codigo_barras', (string)$produto->cEAN ?? '')->with('tributacao')->first();
+            $produtoModel = Produto::where('codigo_barras', (string)$produto->prod->cEAN ?? '')
+                ->with('tributacao')->first();
         }
-
 
         if ($produtoModel && $produtoModel->tributacao) {
-            $MVA = 1 + ($produtoModel->tributacao->MVA / 100);
-            $ICMS = $produtoModel->tributacao->ICMS / 100;
-            $ICMS_ST = $produtoModel->tributacao->ICMS_ST / 100;
+            $MVA = bcadd('1', bcdiv((string)$produtoModel->tributacao->MVA, '100', 8), 8);
+            $ICMS = bcdiv((string)$produtoModel->tributacao->ICMS, '100', 8);
+            $ICMS_ST = bcdiv((string)$produtoModel->tributacao->ICMS_ST, '100', 8);
         } else {
-            $MVA = $ICMS = $ICMS_ST = 0;
+            $MVA = $ICMS = $ICMS_ST = '0';
         }
 
-        $valorUnitario = round((float)($produto->vUnCom ?? 0), 2);
-        $quantidade = round((float)($produto->qCom ?? 0), 2);
+        $valorUnitario = $this->bcround((string)($produto->prod->vUnCom ?? '0'), 2);
+        $quantidade = $this->bcround((string)($produto->prod->qCom ?? '0'), 2);
 
-        $ValorComMVA = $valorUnitario * $MVA;
-        $valorpagoOrigem = $valorUnitario * $ICMS;
-        $ValorDevidoDestino = $ValorComMVA * $ICMS_ST;
-        $ValorDescontadoICMSOrigem = $ValorDevidoDestino - $valorpagoOrigem;
+        if (isset($produto->imposto->IPI->IPITrib->vIPI) && bccomp((string)$produto->imposto->IPI->IPITrib->vIPI, '0') > 0) {
+            $valorIPI = (string)$produto->imposto->IPI->IPITrib->vIPI;
+            $IPI = bcdiv($valorIPI, $quantidade, 8);
+        }
 
-        $ValorProdutoComICMS = round($valorUnitario + $ValorDescontadoICMSOrigem, 2);
+        $ValorComMVA = $this->bcround(bcmul(bcadd($valorUnitario, $IPI, 8), $MVA, 8), 2);
+        $valorpagoOrigem = $this->bcround(bcmul($valorUnitario, $ICMS, 8), 2);
+        $ValorDevidoDestino = bcmul($ValorComMVA, $ICMS_ST, 8);
+        $ValorDescontadoICMSOrigem = $this->bcround(bcsub($ValorDevidoDestino, $valorpagoOrigem, 8), 3);
+        $ValorProdutoComICMS = $this->bcround(bcadd($valorUnitario, $ValorDescontadoICMSOrigem, 8), 2);
+
         $ValorProdutoComICMSDesconto = $ValorProdutoComICMS;
-
-        if ($DescontoPorcentagem > 0) {
-            $ValorProdutoComICMSDesconto = round($ValorProdutoComICMS * (1 - $DescontoPorcentagem), 2);
+        if (bccomp($DescontoPorcentagem, '0') > 0) {
+            $ValorProdutoComICMSDesconto = $this->bcround(bcmul($ValorProdutoComICMS, bcsub('1', $DescontoPorcentagem, 8), 8), 2);
         }
 
-        $totalICMS = $quantidade * $ValorDescontadoICMSOrigem;
-        $totalDeICMSPagar = number_format($totalICMS, 2, ',', '.');
-        $this->totalICMSGeral += $totalICMS;
+        $totalICMS = $this->bcround(bcmul($quantidade, $ValorDescontadoICMSOrigem, 8), 2);
+        $totalDeICMSPagar = number_format((float)$totalICMS, 2, ',', '.');
+        $this->totalICMSGeral = bcadd($this->totalICMSGeral, $totalICMS, 8);
 
         return [
-            'codigo' => (string)$produto->cProd ?? 'Sem código',
-            'descricao' => (string)$produto->xProd ?? 'Sem descrição',
-            'codigo_barras' => (string)$produto->cEAN ?? 'SEM GTIN',
-            'ncm' => (string)$produto->NCM ?? 'Sem NCM',
-            'quantidade' => (float)$produto->qCom ?? 0,
-            'valor_unitario' => number_format(round((float)($produto->vUnCom ?? 0), 2), 2, ',', '.'),
-            'valor_total' => number_format((float)$produto->vProd ?? 0, 2, ',', '.'),
-            'total_a_Pagar' => number_format($ValorDevidoDestino, 2, ',', '.'),
-            'preco_finalDesconto' => number_format($ValorProdutoComICMSDesconto, 2, ',', '.'),
-            'preco_final' => number_format($ValorProdutoComICMS, 2, ',', '.'),
+            'codigo' => (string)$produto->prod->cProd ?? 'Sem código',
+            'descricao' => (string)$produto->prod->xProd ?? 'Sem descrição',
+            'codigo_barras' => (string)$produto->prod->cEAN ?? 'SEM GTIN',
+            'ncm' => (string)$produto->prod->NCM ?? 'Sem NCM',
+            'quantidade' => (float)$quantidade,
+            'valor_unitario' => number_format((float)$valorUnitario, 2, ',', '.'),
+            'valor_total' => number_format((float)$produto->prod->vProd ?? 0, 2, ',', '.'),
+            'total_a_Pagar' => number_format((float)$ValorDevidoDestino, 2, ',', '.'),
+            'preco_finalDesconto' => number_format((float)$ValorProdutoComICMSDesconto, 2, ',', '.'),
+            'preco_final' => number_format((float)$ValorProdutoComICMS, 2, ',', '.'),
             'total_ICMS' => $totalDeICMSPagar,
         ];
+    }
+
+    private function bcround($number, $precision = 2)
+    {
+        $factor = bcpow('10', (string)$precision, 8);
+        return bcdiv(bcmul($number, $factor, 8), $factor, $precision);
     }
 }

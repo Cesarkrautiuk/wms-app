@@ -7,5 +7,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/ler-xml',[notaFiscal::class,'index'])->name('notaFiscal.index');
 Route::post('/ler-xml', [notaFiscal::class, 'importarXML'])->name('importarXML');
+Route::post('/salvar-xml', [notaFiscal::class, 'salvarXML'])->name('salvarXML');
 Route::post('/import', [ExcelController::class, 'import'])->name('import');
 Route::get('/import', [ExcelController::class, 'index'])->name('import.index');

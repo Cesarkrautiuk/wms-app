@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('codigo_erp')->nullable(); // Código ERP (pode ser nulo)
             $table->string('codigo_fornecedor')->nullable(); // Código do fornecedor (pode ser nulo)
             $table->decimal('preco', 10, 2); // Preço do produto com 2 casas decimais
-            $table->foreignId('tributacao_id')->constrained()->onDelete('cascade'); // Vínculo com a tabela de tributação
+            $table->foreignId('tributacao_id')->constrained('tributacoes')->onDelete('cascade');
             $table->timestamps(); // Timestamps para criação e atualização
 
             // Adiciona um índice único para o código ERP, caso necessário
