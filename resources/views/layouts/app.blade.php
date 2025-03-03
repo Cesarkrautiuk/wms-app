@@ -38,7 +38,7 @@
                        href="{{ route('import.index') }}">Importar Produto</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {{ Request::is('/a') ? 'active' : '' }}" href="{{ route('notaFiscal.index') }}">Produto</a>
+                    <a class="nav-link {{ Route::currentRouteName() == 'produto.index' ? 'active' : '' }}" href="{{ route('produto.index') }}">Produto</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="#">Tributação</a>

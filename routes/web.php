@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ExcelController;
 use App\Http\Controllers\notaFiscal;
+use App\Http\Controllers\ProdutoController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -10,3 +11,5 @@ Route::post('/ler-xml', [notaFiscal::class, 'importarXML'])->name('importarXML')
 Route::post('/salvar-xml', [notaFiscal::class, 'salvarXML'])->name('salvarXML');
 Route::post('/import', [ExcelController::class, 'import'])->name('import');
 Route::get('/import', [ExcelController::class, 'index'])->name('import.index');
+Route::get('/produto', [ProdutoController::class, 'index'])->name('produto.index');
+Route::get('/buscar-produto/{id}', [ProdutoController::class, 'buscarProduto'])->name('produto.buscar');
