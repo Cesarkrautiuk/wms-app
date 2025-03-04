@@ -5,11 +5,46 @@ namespace App\Http\Services;
 use App\Models\Produto;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use mysql_xdevapi\Exception;
 use SimpleXMLElement;
 
 class ProdutoService
 {
     protected $totalICMSGeral = 0;
+
+    public function createOrUpdadte(Request $request)
+    {
+        $validatedData = $request->validate([
+            'codigoERP' => 'required|string',
+            'descricao' => 'required|string',
+            'codigoBarra' => 'required|string',
+            'fornecedor' => 'required|string',
+            'situacao' => 'required|string',
+            'ncm' => 'required|string',
+            'cest' => 'required|string',
+            'tributacao' => 'required|exists:tributacoes,id',
+        ]);
+
+        try {
+            $produto = Produto::updateOrCreate(
+                ['codigo_erp' => $validatedData['codigoERP']],
+                [
+                    'descricao' => $validatedData['descricao'],
+                    'codigo_barras' => $validatedData['codigoBarra'],
+                    'fornecedor' => $validatedData['fornecedor'],
+                    'situacao' => $validatedData['situacao'],
+                    'ncm' => $validatedData['ncm'],
+                    'cest' => $validatedData['cest'],
+                    'tributacao_id' => $validatedData['tributacao'],
+                    'preco' => 0,
+                ]
+            );
+            return response()->json($produto);
+        } catch (Exception $e) {
+            throw new \Exception('Erro ao importar planilha.');
+        }
+
+    }
 
     public function importarXML(Request $request)
     {

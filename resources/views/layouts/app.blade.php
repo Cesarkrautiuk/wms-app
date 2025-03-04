@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload XML</title>
+    <title>@yield('title', 'WMS')</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
@@ -41,7 +41,8 @@
                     <a class="nav-link {{ Route::currentRouteName() == 'produto.index' ? 'active' : '' }}" href="{{ route('produto.index') }}">Produto</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Tributação</a>
+                    <a class="nav-link {{ Route::currentRouteName() == 'tributacao' ? 'active' : '' }}" href="{{ route('tributacao') }}">Tributação</a>
+
                 </li>
             </ul>
         </div>

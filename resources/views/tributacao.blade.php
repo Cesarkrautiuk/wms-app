@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Cadastro de Produto')
+@section('title', 'Cadastro de tributação')
 @section('content')
     <div class="card">
         <div class="card-body">
@@ -61,38 +61,6 @@
                             </div>
                             <input type="text" name="ncm" id="ncm" class="form-control"
                                    aria-describedby="basic-addon1">
-                        </div>
-                    </div>
-                    <div class="col-3">
-                        <div class="input-group col mb-3">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text" id="basic-addon1">CEST</span>
-                            </div>
-                            <input type="text" name="cest" id="cest" class="form-control"
-                                   aria-describedby="basic-addon1">
-                        </div>
-                    </div>
-                    <div class="col-2">
-                        <div class="input-group col mb-3">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text" id="basic-addon1">Situação</span>
-                            </div>
-                            <input type="text" name="situacao" id="situacao" class="form-control" aria-label="Situação"
-                                   aria-describedby="basic-addon1">
-                        </div>
-                    </div>
-                    <div class="col">
-                        <div class="input-group mb-3">
-                            <div class="input-group-prepend">
-                                <label class="input-group-text" for="inputGroupSelectTributacao">Tributação
-                                    entrada</label>
-                            </div>
-                            <select name="tributacao" class="form-control" id="inputGroupSelectTributacao">
-                                <option selected>Selecionar</option>
-                                @foreach($tributacao as $item)
-                                    <option value="{{ $item->id }}">{{ $item->descricao }}</option>
-                                @endforeach
-                            </select>
                         </div>
                     </div>
                 </div>

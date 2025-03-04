@@ -1,5 +1,5 @@
 @extends('layouts.app')
-
+@section('title', 'Importação de produto')
 @section('content')
     <div class="card">
         <div class="card-body">

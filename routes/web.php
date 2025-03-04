@@ -3,6 +3,7 @@
 use App\Http\Controllers\ExcelController;
 use App\Http\Controllers\notaFiscal;
 use App\Http\Controllers\ProdutoController;
+use App\Http\Controllers\tributacao;
 use Illuminate\Support\Facades\Route;
 
 
@@ -13,3 +14,5 @@ Route::post('/import', [ExcelController::class, 'import'])->name('import');
 Route::get('/import', [ExcelController::class, 'index'])->name('import.index');
 Route::get('/produto', [ProdutoController::class, 'index'])->name('produto.index');
 Route::get('/buscar-produto/{id}', [ProdutoController::class, 'buscarProduto'])->name('produto.buscar');
+Route::post('/buscar-produto', [ProdutoController::class, 'store'])->name('produto.salvar');
+Route::get('/tributacao', [tributacao::class, 'index'])->name('tributacao');

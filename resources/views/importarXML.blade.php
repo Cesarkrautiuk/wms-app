@@ -1,4 +1,5 @@
 @extends('layouts.app')
+@section('title', 'Importar XML')
 <meta name="csrf-token" content="{{ csrf_token() }}">
 @section('content')
     <div class="card">
