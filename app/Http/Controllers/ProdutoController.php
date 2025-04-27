@@ -50,4 +50,42 @@ class ProdutoController extends Controller
             return redirect()->back()->with('error', $e->getMessage());
         }
     }
+
+    public function listarProdutos(Request $request)
+    {
+        $busca = $request->query('busca');
+        $produtos = Produto::query()->when($busca, function ($query) use ($busca) {
+            $query->where('descricao', 'LIKE', "%{$busca}%")
+                ->orWhere('codigo_erp', 'LIKE', "%{$busca}%")
+                ->orWhere('codigo_barras', 'LIKE', "%{$busca}%")
+                ->orWhere('situacao', 'LIKE', "%{$busca}%")
+                ->orWhere('fornecedor', 'LIKE', "%{$busca}%")
+                ->orWhere('ncm', 'LIKE', "%{$busca}%")
+                ->orWhere('cest', 'LIKE', "%{$busca}%");
+        })
+            ->orderBy('codigo_erp', 'asc')
+            ->paginate(30)
+            ->withQueryString();
+
+        return view('listarProdutos', compact('produtos'));
+    }
+
+    public function gerarPdf(Request $request)
+    {
+        $busca = $request->query('busca');
+        $produtos = Produto::query()->when($busca, function ($query) use ($busca) {
+            $query->where('descricao', 'LIKE', "%{$busca}%")
+                ->orWhere('codigo_erp', 'LIKE', "%{$busca}%")
+                ->orWhere('codigo_barras', 'LIKE', "%{$busca}%")
+                ->orWhere('situacao', 'LIKE', "%{$busca}%")
+                ->orWhere('fornecedor', 'LIKE', "%{$busca}%")
+                ->orWhere('ncm', 'LIKE', "%{$busca}%")
+                ->orWhere('cest', 'LIKE', "%{$busca}%");
+        })
+            ->orderBy('codigo_erp', 'asc')
+            ->get();
+        $pdf = \PDF::loadView('pdf', compact('produtos', 'busca'))
+            ->setPaper('a4', 'landscape');
+        return $pdf->stream('relatorio-produtos.pdf');
+    }
 }

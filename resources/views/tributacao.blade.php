@@ -3,22 +3,22 @@
 @section('content')
     <div class="card">
         <div class="card-body">
-            <h5 class="card-title mb-3 m-1">Cadastro de produto</h5>
+            <h5 class="card-title mb-3 m-1">Cadastro Tributação</h5>
             <form id="FormProduto" action="{{ route('produto.salvar') }} " method="POST">
                 @csrf
                 <div class="row">
-                    <div class="col-3">
+                    <div class="col-2">
                         <div class="input-group  mb-3">
                             <div class="input-group-prepend">
-                                <span class="input-group-text" id="basic-addon1">Código ERP</span>
+                                <span class="input-group-text" id="basic-addon1">Código</span>
                             </div>
-                            <input type="text" id="codigoERP" name="codigoERP" class="form-control"
-                                   aria-label="Código ERP"
+                            <input type="text" id="codigo" name="codigo" class="form-control"
+                                   aria-label="Código"
                                    aria-describedby="basic-addon1">
                         </div>
                     </div>
                     <div class="col">
-                        <div class="input-group col-3 mb-3">
+                        <div class="input-group mb-3">
                             <div class="input-group-prepend">
                                 <span class="input-group-text" id="basic-addon1">Descrição</span>
                             </div>
@@ -27,39 +27,30 @@
                                    aria-describedby="basic-addon1">
                         </div>
                     </div>
-                </div>
-                <div class="row">
                     <div class="col">
-                        <div class="input-group col mb-3">
+                        <div class="input-group  mb-3">
                             <div class="input-group-prepend">
-                                <span class="input-group-text" id="basic-addon1">Código de barras</span>
+                                <span class="input-group-text" id="basic-addon1">MVA</span>
                             </div>
-                            <input type="text" id="codigoBarras" name="codigoBarra" class="form-control"
-                                   aria-label="Código de barras"
+                            <input type="text" name="ncm" id="mva" class="form-control"
                                    aria-describedby="basic-addon1">
                         </div>
                     </div>
                     <div class="col">
-                        <div class="input-group mb-3">
-                            <div class="input-group-prepend">
-                                <label class="input-group-text" for="inputGroupSelectFornecedor">Fornecedor</label>
-                            </div>
-                            <select name="fornecedor" class="form-control" id="inputGroupSelectFornecedor">
-                                <option selected>Koloss</option>
-                                <option value="BELLIZ">BELLIZ</option>
-                                <option value="2">Two</option>
-                                <option value="3">Three</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-3">
                         <div class="input-group col mb-3">
                             <div class="input-group-prepend">
-                                <span class="input-group-text" id="basic-addon1">NCM</span>
+                                <span class="input-group-text" id="basic-addon1">ICMS</span>
                             </div>
-                            <input type="text" name="ncm" id="ncm" class="form-control"
+                            <input type="text" name="ncm" id="icms" class="form-control"
+                                   aria-describedby="basic-addon1">
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="input-group col mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addon1">ICMS ST</span>
+                            </div>
+                            <input type="text" name="ncm" id="icmsSt" class="form-control"
                                    aria-describedby="basic-addon1">
                         </div>
                     </div>
@@ -75,7 +66,7 @@
                 var codigoERP = $(this).val().trim();
                 if (codigoERP !== "") {
                     $.ajax({
-                        url: '/buscar-produto/' + codigoERP, // monta a URL com o parâmetro {id}
+                        url: '/buscar-produto/' + codigoERP,
                         type: 'GET',
                         dataType: 'json',
                         success: function (response) {

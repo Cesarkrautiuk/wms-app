@@ -127,10 +127,6 @@ class ProdutoService
 
     private function processarProduto($produto, $desconto)
     {
-        bcscale(8); // Define a precisão para 8 casas decimais
-
-        $DescontoPorcentagem = bcdiv($desconto, '100', 8);
-        $IPI = '0';
 
         if ((string)$produto->cEAN === 'SEM GTIN') {
             $produtoModel = Produto::where('codigo_fornecedor', (string)$produto->prod->cProd)
@@ -140,55 +136,34 @@ class ProdutoService
                 ->with('tributacao')->first();
         }
 
-        if ($produtoModel && $produtoModel->tributacao) {
-            $MVA = bcadd('1', bcdiv((string)$produtoModel->tributacao->MVA, '100', 8), 8);
-            $ICMS = bcdiv((string)$produtoModel->tributacao->ICMS, '100', 8);
-            $ICMS_ST = bcdiv((string)$produtoModel->tributacao->ICMS_ST, '100', 8);
-        } else {
-            $MVA = $ICMS = $ICMS_ST = '0';
-        }
+        $dados = [
+            'valor_unitario' => (string)$produto->prod->vUnCom ?? '0',
+            'quantidade' => (string)$produto->prod->qCom ?? '0',
+            'ipi' => isset($produto->imposto->IPI->IPITrib->vIPI) ? (string)$produto->imposto->IPI->IPITrib->vIPI : '0',
 
-        $valorUnitario = $this->bcround((string)($produto->prod->vUnCom ?? '0'), 2);
-        $quantidade = $this->bcround((string)($produto->prod->qCom ?? '0'), 2);
+            'mva' => $produtoModel->tributacao->MVA ?? '0',
+            'icms' => $produtoModel->tributacao->ICMS ?? '0',
+            'icms_st' => $produtoModel->tributacao->ICMS_ST ?? '0',
+            'desconto' => $desconto,
+        ];
 
-        if (isset($produto->imposto->IPI->IPITrib->vIPI) && bccomp((string)$produto->imposto->IPI->IPITrib->vIPI, '0') > 0) {
-            $valorIPI = (string)$produto->imposto->IPI->IPITrib->vIPI;
-            $IPI = bcdiv($valorIPI, $quantidade, 8);
-        }
+        $resultadoTributacao = TributacaoCalculator::calcular($dados);
 
-        $ValorComMVA = $this->bcround(bcmul(bcadd($valorUnitario, $IPI, 8), $MVA, 8), 2);
-        $valorpagoOrigem = $this->bcround(bcmul($valorUnitario, $ICMS, 8), 2);
-        $ValorDevidoDestino = bcmul($ValorComMVA, $ICMS_ST, 8);
-        $ValorDescontadoICMSOrigem = $this->bcround(bcsub($ValorDevidoDestino, $valorpagoOrigem, 8), 3);
-        $ValorProdutoComICMS = $this->bcround(bcadd($valorUnitario, $ValorDescontadoICMSOrigem, 8), 2);
-
-        $ValorProdutoComICMSDesconto = $ValorProdutoComICMS;
-        if (bccomp($DescontoPorcentagem, '0') > 0) {
-            $ValorProdutoComICMSDesconto = $this->bcround(bcmul($ValorProdutoComICMS, bcsub('1', $DescontoPorcentagem, 8), 8), 2);
-        }
-
-        $totalICMS = $this->bcround(bcmul($quantidade, $ValorDescontadoICMSOrigem, 8), 2);
-        $totalDeICMSPagar = number_format((float)$totalICMS, 2, ',', '.');
-        $this->totalICMSGeral = bcadd($this->totalICMSGeral, $totalICMS, 8);
+        $this->totalICMSGeral = bcadd($this->totalICMSGeral, $resultadoTributacao['total_icms'], 8);
 
         return [
             'codigo' => (string)$produto->prod->cProd ?? 'Sem código',
             'descricao' => (string)$produto->prod->xProd ?? 'Sem descrição',
             'codigo_barras' => (string)$produto->prod->cEAN ?? 'SEM GTIN',
             'ncm' => (string)$produto->prod->NCM ?? 'Sem NCM',
-            'quantidade' => (float)$quantidade,
-            'valor_unitario' => number_format((float)$valorUnitario, 2, ',', '.'),
+            'quantidade' => (float)$resultadoTributacao['quantidade'],
+            'valor_unitario' => number_format((float)$resultadoTributacao['valor_unitario'], 2, ',', '.'),
             'valor_total' => number_format((float)$produto->prod->vProd ?? 0, 2, ',', '.'),
-            'total_a_Pagar' => number_format((float)$ValorDevidoDestino, 2, ',', '.'),
-            'preco_finalDesconto' => number_format((float)$ValorProdutoComICMSDesconto, 2, ',', '.'),
-            'preco_final' => number_format((float)$ValorProdutoComICMS, 2, ',', '.'),
-            'total_ICMS' => $totalDeICMSPagar,
+            'total_a_Pagar' => number_format((float)$resultadoTributacao['valor_devido_destino'], 2, ',', '.'),
+            'preco_finalDesconto' => number_format((float)$resultadoTributacao['valor_produto_com_icms_desconto'], 2, ',', '.'),
+            'preco_final' => number_format((float)$resultadoTributacao['valor_produto_com_icms'], 2, ',', '.'),
+            'total_ICMS' => number_format((float)$resultadoTributacao['total_icms'], 2, ',', '.'),
         ];
     }
 
-    private function bcround($number, $precision = 2)
-    {
-        $factor = bcpow('10', (string)$precision, 8);
-        return bcdiv(bcmul($number, $factor, 8), $factor, $precision);
-    }
 }

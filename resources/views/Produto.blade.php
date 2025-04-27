@@ -45,7 +45,8 @@
                                 <label class="input-group-text" for="inputGroupSelectFornecedor">Fornecedor</label>
                             </div>
                             <select name="fornecedor" class="form-control" id="inputGroupSelectFornecedor">
-                                <option selected>Koloss</option>
+                                <option selected>Selecionar</option>
+                                <option value="KOLOSS" >Koloss</option>
                                 <option value="BELLIZ">BELLIZ</option>
                                 <option value="2">Two</option>
                                 <option value="3">Three</option>
@@ -107,7 +108,7 @@
                 var codigoERP = $(this).val().trim();
                 if (codigoERP !== "") {
                     $.ajax({
-                        url: '/buscar-produto/' + codigoERP, // monta a URL com o parâmetro {id}
+                        url: '/buscar-produto/' + codigoERP,
                         type: 'GET',
                         dataType: 'json',
                         success: function (response) {
